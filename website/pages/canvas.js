@@ -14,6 +14,8 @@ import Nav from 'react-bootstrap/Nav'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './canvas.module.css';
 import { Client } from "@notionhq/client";
+import axios from "axios";
+
 
 const notion = new Client({
     auth: "secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx"
@@ -23,18 +25,13 @@ const notion = new Client({
 const sampleFile = "https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2"
 
 
-const getDatabase = async (databaseId) => {
-    console.log("in get database")
-    const response = await notion.databases.query({
-      database_id: databaseId,
-    });
-    return response.results;
-  };
 
 const getPage = async (pageId) => {
     const response = await notion.pages.retrieve({ page_id: pageId });
     return response;
 };
+
+
 
 <style jsx>{`
     .iframe {
@@ -42,6 +39,10 @@ const getPage = async (pageId) => {
     }
     `
 }</style>
+
+
+
+
 
 
 
@@ -55,6 +56,7 @@ export default function Canvas() {
     const [headerOpen, setHeaderOpen] = useState(true);
     const [data, setData] = useState(null);
     const [figmaEmbedFrame, setFigmaEmbedFrame] = useState(null);
+    const [notionObjs, setNotionObjs] = useState(null);
 
     const [noteText, setNoteText] = useState("");
     const [notionSrc, setNotionSrc] = useState("");
@@ -62,20 +64,38 @@ export default function Canvas() {
     const [otherSrc, setOtherSrc] = useState("");
     const [other2Src, setOtherSrc2] = useState("");
 
-   /*  useEffect(() => {
-        const fetchData = async () => {
-            const result = await getPage("https://www.notion.so/Initialize-project-cd69e214e8184f3092422d192bd9e5ec");
-            console.log("notion result", result.json())
-            setData(result.data);
+    const options = {
+        method: 'GET',
+        url: 'https://api.notion.com/v1/pages/cd69e214e8184f3092422d192bd9e5ec',
+        headers: {
+          'Notion-Version': '2021-05-13',
+          Authorization: 'Bearer secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx'
         }
-        fetchData()
-        console.log(data)
-    }, [])
- */
+      };
+
+
+    const parseNotionId = (url) => {
+        return url.split('-').pop()
+    }
+
+    async function getNotionData(url) {
+        const id = parseNotionId(url)
+        const notionData = await axios.get('/api/notion_api', { params: { src: id }})
+            .then(function(response) {
+                console.log(response.data.properties)
+                setNotionObjs(response.data.properties.title.title.plain_text)
+            })
+        console.log("NOTION OBJS", notionObjs)
+    }
 
     const noteChange = (e) => {
         setNoteText(e.target.value)
     }
+
+    const notionSrcChange = (e) => {
+        setNotionSrc(e.target.value)
+    }
+
 
     const figmaSrcChange = (e) => {
         setFigmaSrc(e.target.value)
@@ -118,7 +138,7 @@ export default function Canvas() {
             innerWidth: window.innerWidth,
             innerHeight: window.innerHeight
         });
-    }, [rectObjs, circleObjs, textObjs, objNum])
+    }, [rectObjs, circleObjs, textObjs, objNum, notionObjs])
 
     
 
@@ -200,10 +220,11 @@ export default function Canvas() {
     }
 
 
-    console.log(textObjs)
+    console.log(notionObjs)
 
     return (
         <div>
+        {notionObjs ? (<div>Loading...</div>) : (<div>{notionObjs}</div>)}
         
         {headerOpen && <div className={styles.header}>
             <Container fluid>
@@ -226,9 +247,9 @@ export default function Canvas() {
                     <Card.Body>
                         <Card.Title>Notion doc</Card.Title>
                         <Card.Text>
-                        <textarea value={notionSrc} onChange={noteChange} type="text" name="name" placeholder="Doc link"/>
+                        <textarea value={notionSrc} onChange={notionSrcChange} type="text" name="name" placeholder="Doc link"/>
                         </Card.Text>
-                        <Button variant="primary">Add</Button>
+                        <Button variant="primary" onClick={() => getNotionData(notionSrc)}>Add</Button>
                     </Card.Body>
                     </Card>
                     

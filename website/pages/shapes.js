@@ -3,9 +3,9 @@ import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 export const RectObj = <Rect
     x={50}
     y={100}
-    width={100}
-    height={100}
-    fill="red"
+    width={200}
+    height={200}
+    fill="#B3DFB5"
     onDragStart={() => {
         setState({
         isDragging: true
@@ -33,10 +33,10 @@ export const LineObj = <Line
 />
 
 export const CircleObj = <Circle 
-    x={100} 
-    y={300} 
-    radius={50} 
-    fill="green" 
+    x={150} 
+    y={450} 
+    radius={100} 
+    fill="#E0BBE4" 
     onDragStart={() => {
         setState({
         isDragging: true

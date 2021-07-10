@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useRef } from 'react';
 import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
-import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj } from './shapes';
-import { FigmaEmbed } from './embeds'
+import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj } from '../components/shapes';
+import { FigmaEmbed } from '../components/embeds'
 import { Html } from 'react-konva-utils';
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'

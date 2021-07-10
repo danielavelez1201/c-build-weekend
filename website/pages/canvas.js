@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { createContext, useEffect, useState } from 'react';
 import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
+import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj } from './shapes';
+import { FigmaEmbed } from './embeds'
 
 <style jsx>{`
     .iframe {
@@ -8,76 +10,39 @@ import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
     `
 }</style>
 
-const rectObj = <Rect
-        x={200}
-        y={50}
-        width={100}
-        height={100}
-        fill="red"
-        shadowBlur={10}
-        onDragStart={() => {
-            setState({
-            isDragging: true
-            });
-        }}
-        onDragEnd={e => {
-            setState({
-            isDragging: false,
-            x: e.target.x(),
-            y: e.target.y()
-            });
-        }}
-    />
-
-
 
 export default function Canvas() {
-
     const [windowVar, setWindowVar] = useState({innerWidth: 0, innerHeight: 0})
-    const [rectObjs, setRectObjs] = useState([]);
+    const [rectObjs, setRectObjs] = useState([RectObj, RectObj, RectObj]);
+    const [textObjs, setTextObjs] = useState([TitleTextObj]);
+    const [circleObjs, setCircleObjs] = useState([CircleObj]);
+    const [lineObjs, setLineObjs] = useState([LineObj]);
+    const [objNum, setObjNum] = useState(0);
 
-    const [textObjs, setTextObjs] = useState([]);
-    const [circleObjs, setCircleObjs] = useState([]);
-    const [lineObjs, setLineObjs] = useState([]);
+    const addObject = () => {
+        const currentRectObjs = rectObjs;
+        for (let i =0; i<10; i++) {
+            currentRectObjs.push(RectObj)
+        }
+        setRectObjs(currentRectObjs)
+
+        const currentCircleObjs = circleObjs;
+        for (let i =0; i<10; i++) {
+            currentCircleObjs.push(CircleObj)
+        }
+        setCircleObjs(currentCircleObjs)
+        setObjNum(objNum + 1)
+    }
+
 
     useEffect(() => {
         setWindowVar({
             innerWidth: window.innerWidth,
             innerHeight: window.innerHeight
         });
-    }, [rectObjs, circleObjs])
+    }, [rectObjs, circleObjs, textObjs, objNum])
 
-    const addObject = (shape) => {
-        console.log("adding object", shape)
-        if (shape === "rect") {
-            rectObjs.push(<Rect
-                x={20}
-                y={50}
-                width={100}
-                height={100}
-                fill="red"
-                shadowBlur={10}
-                onDragStart={() => {
-                    setState({
-                    isDragging: true
-                    });
-                }}
-                onDragEnd={e => {
-                    setState({
-                    isDragging: false,
-                    x: e.target.x(),
-                    y: e.target.y()
-                    });
-                }}
-            />)
-        }
-        if (shape === "circle") {
-            circleObjs.push(<Circle x={200} y={100} radius={30} fill="red"/>)
-        }
-    }
-
-    const buttonRect = <Text fill="green" onMouseDown ={addObject("rect")} />
-
+    
 
     const handleDragStart = (e) => {
         const id = e.target.id();
@@ -89,8 +54,26 @@ export default function Canvas() {
                 }
             })
         )
+        setCircleObjs(
+            circleObjs.map((object) => {
+                return {
+                    ...object,
+                    isDragging: object.id === id
+                }
+            })
+        )
+        setTextObjs(
+            textObjs.map((object) => {
+                return {
+                    ...object,
+                    isDragging: object.id === id
+                }
+            })
+        )
+        setObjNum(objNum + 1)
     }
     const handleDragEnd = (e) => {
+        const id = e.target.id();
         setRectObjs(
             rectObjs.map((object) => {
                 return {
@@ -99,63 +82,79 @@ export default function Canvas() {
                 }
             })
         )
+        setCircleObjs(
+            circleObjs.map((object) => {
+                return {
+                    ...object,
+                    isDragging: false
+                }
+            })
+        )
+        setTextObjs(
+            textObjs.map((object) => {
+                return {
+                    ...object,
+                    isDragging: false
+                }
+            })
+        )
     }
 
-    const textObj = <Text
-        text="Draggable Text"
-        x={20}
-        y={50}
-        draggable
-        fill={'black'}
-        onDragStart={() => {
-            setState({
-            isDragging: true
-            });
-        }}
-        onDragEnd={e => {
-            setState({
-            isDragging: false,
-            x: e.target.x(),
-            y: e.target.y()
-            });
-        }}
-    />
+    const createText = (e) => {
+        const x = e.evt.x
+        const y = e.evt.y
+        const currentTextObjs = textObjs
+        currentTextObjs.push(<Text
+            text="New Text"
+            x= {x}
+            y= {y}
+            draggable
+            fill={'black'}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+        />)
+        setTextObjs(currentTextObjs)
+        setObjNum(objNum + 1)
+    }
 
-    
 
-    const circleObj = <Circle x={200} y={100} radius={50} fill="green" />
-
-    const lineObj = <Line
-          x={20}
-          y={200}
-          points={[0, 0, 100, 0, 100, 100]}
-          tension={0.5}
-          closed
-          stroke="black"
-          fillLinearGradientStartPoint={{ x: -50, y: -50 }}
-          fillLinearGradientEndPoint={{ x: 50, y: 50 }}
-          fillLinearGradientColorStops={[0, 'red', 1, 'yellow']}
-        />
-
-    
-
-    const figmaEmbed = <iframe className="iframe"
-        width="400" 
-        height="200" 
-        src="https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2" 
-        draggable="true"
-        allowfullscreen>
-     
-    </iframe>
-
-    console.log(rectObjs)
+    console.log(textObjs)
 
     return (
         <div>
-        {figmaEmbed}
-
-      <Stage width={windowVar.innerWidth} height={windowVar.innerHeight}>
+      <Stage width={windowVar.innerWidth} height={windowVar.innerHeight} onDblClick={(e) => createText(e)}>
         <Layer>
+            <Rect
+                x={50}
+                y={100}
+                width={100}
+                height={100}
+                fill="red"
+                shadowBlur={10}
+                onMouseDown={() => addObject()}
+            />
+            <Circle 
+            x={100} 
+            y={300} 
+            radius={50} 
+            fill="green" 
+            shadowBlur={10}
+            onMouseDown={() => addObject()}
+            />
+            {textObjs.map((text) => (
+                <Text
+                text={text.props.text}
+                x={text.props.x}
+                y={text.props.y}
+                fontSize={text.props.fontSize}
+                fontFamily={text.props.fontFamily}
+                draggable
+                fill={'black'}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onMouseDown={() => addObject()}
+            />
+            ))}
             {rectObjs.map((rect) => (
                 <Rect
                 key={rect.props.id}
@@ -171,9 +170,20 @@ export default function Canvas() {
                 onDragEnd={handleDragEnd}
             />
             ))}
-
-            {buttonRect}
-            
+            {circleObjs.map((circle) => (
+                <Circle 
+                key={circle.props.id}
+                id={circle.props.id}
+                x={circle.props.x} 
+                y={circle.props.y} 
+                radius={circle.props.radius} 
+                fill={circle.props.fill}
+                draggable
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onClick={() => addObject}
+                />
+            ))}            
           
         </Layer>
       </Stage>      

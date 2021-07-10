@@ -80,12 +80,12 @@ export default function Canvas() {
 
     async function getNotionData(url) {
         const id = parseNotionId(url)
-        const notionData = await axios.get('/api/notion_api', { params: { src: id }})
+        await axios.get('/api/notion_api', { params: { src: id }})
             .then(function(response) {
                 console.log(response.data.properties)
-                setNotionObjs(response.data.properties.title.title.plain_text)
+                console.log(response.data.properties.title.title.plain_text)
+                setNotionObjs(response.data.properties)
             })
-        console.log("NOTION OBJS", notionObjs)
     }
 
     const noteChange = (e) => {
@@ -138,6 +138,8 @@ export default function Canvas() {
             innerWidth: window.innerWidth,
             innerHeight: window.innerHeight
         });
+        if (notionObjs !== null) {
+            console.log("notionObj var", notionObjs.title.title[0].plain_text)}
     }, [rectObjs, circleObjs, textObjs, objNum, notionObjs])
 
     
@@ -224,7 +226,6 @@ export default function Canvas() {
 
     return (
         <div>
-        {notionObjs ? (<div>Loading...</div>) : (<div>{notionObjs}</div>)}
         
         {headerOpen && <div className={styles.header}>
             <Container fluid>
@@ -298,7 +299,8 @@ export default function Canvas() {
                     </Col>
                 </Row>
             </Container>
-        </div>}        
+        </div>}
+        {notionObjs && <div>{notionObjs.title.title[0].plain_text}</div>}        
         <div>
         <br></br>
         <button onClick={() => setHeaderOpen(!headerOpen)}><img height="30px" src="https://static.thenounproject.com/png/551749-200.png"></img></button>

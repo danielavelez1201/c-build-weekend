@@ -6,7 +6,6 @@ export const RectObj = <Rect
     width={100}
     height={100}
     fill="red"
-    shadowBlur={10}
     onDragStart={() => {
         setState({
         isDragging: true
@@ -73,9 +72,36 @@ export const TextObj = <Text
 
 export const TitleTextObj = <Text
     text="Project"
+    fontFamily="Courier"
     fontSize={50}
     x={800}
     y={20}
     fill={'black'}
 
 />
+
+export const NoteTextObj = (text) => {
+    return (<Text
+        text={text}
+        fontSize={20}
+        fontFamily="Courier"
+        x={300}
+        y={300}
+        width={50}
+        zIndex={0}
+        draggable
+        fill={'black'}
+        onDragStart={() => {
+            setState({
+            isDragging: true
+            });
+        }}
+        onDragEnd={e => {
+            setState({
+            isDragging: false,
+            x: e.target.x(),
+            y: e.target.y()
+            });
+        }}
+    />)
+} 

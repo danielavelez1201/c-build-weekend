@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useRef } from 'react';
 import { Stage, Layer, Rect, Text, Circle, Line, Star, Group } from 'react-konva';
 import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj, CircleTextObj, StarObj, CorgiObj } from '../components/shapes';
-import { FigmaEmbed, NotionEmbed, GithubEmbed } from '../components/embeds'
+import { FigmaEmbed, NotionEmbed, GithubEmbed, WebLinkEmbed } from '../components/embeds'
 import { useRouter } from 'next/router'
 import useImage from 'use-image';
 
@@ -38,6 +38,13 @@ const getPage = async (pageId) => {
   }
 `}</style>;
 
+const WebEmbed = props => {
+    const data = props.data
+    return (
+        WebLinkEmbed(data)
+    )
+}
+
 export default function Canvas() {
     const [windowVar, setWindowVar] = useState({innerWidth: 0, innerHeight: 0})
     const [stars, setStars] = useState([StarObj]);
@@ -63,6 +70,7 @@ export default function Canvas() {
     const isDrawing = useRef(false);
     const textRef = useRef(null);
     const [notionImage] = useImage("https://i.pinimg.com/originals/99/7b/0a/997b0a243df40b681d8c8177724f1b45.png")
+    const [githubImage] = useImage("https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png")
     const [deleteImage] = useImage("https://static-00.iconduck.com/assets.00/x-close-delete-icon-512x512-hvworgpt.png")
     const [iconSizeT, setIconSizeT] = useState("30px");
     const [iconSizeSquare, setIconSizeSquare] = useState("30px");
@@ -70,6 +78,8 @@ export default function Canvas() {
     const [githubUsername, setGithubUsername] = useState("");
     const [githubRepo, setGithubRepo] = useState("");
     const [githubEmbed, setGithubEmbed] = useState(null);
+    const [webLink, setWebLink] = useState("");
+    const [webLinks, setWebLinks] = useState([]);
 
     const router = useRouter()
 
@@ -130,10 +140,22 @@ export default function Canvas() {
         console.log("async func")
         await axios.get('/api/github_api', {params: {username: githubUsername, repo: githubRepo}})
             .then(function(response) {
-                console.log("response", response.commits)
-                setGithubEmbed(GithubEmbed(response.commits, notionImage, linkFunction, deleteImage, deleteFunction))
-            })
+                console.log(response)
+                setGithubEmbed(GithubEmbed(response.data, githubUsername, githubRepo, githubImage, linkFunction, deleteImage, deleteFunction))
+                setObjNum(objNum + 1)
+            })  
     } 
+
+    async function webLinkSubmit() {
+        await axios.get('/api/web_api', {params: {url: webLink}})
+            .then(function(response) {
+                const currentWebLinks = webLinks
+                currentWebLinks.push(response.data)
+                setWebLinks(currentWebLinks)
+                console.log(webLinks)
+                setObjNum(objNum + 1)
+            })
+    }
   
 
   const handleMouseDown = (e) => {
@@ -179,6 +201,10 @@ export default function Canvas() {
   const noteChange = (e) => {
     setNoteText(e.target.value);
   };
+
+  const webLinkChange = (e) => {
+      setWebLink(e.target.value);
+  }
 
   const githubUsernameChange = (e) => {
       setGithubUsername(e.target.value);
@@ -255,7 +281,7 @@ export default function Canvas() {
         });
         
         // openAI()
-    }, [objNum, notionObjs, stars, corgis, textObjs])
+    }, [objNum, notionObjs, stars, corgis, textObjs, webLinks, githubEmbed])
 
     const deleteNotion = (i) => {
         const newNotionObjs = [...notionObjs]
@@ -367,19 +393,6 @@ export default function Canvas() {
                     </Col>
                     <Col>
                     <Card style={{ width: '18rem' }}>
-                    <Card.Img variant="top" weight="20px" height="200px" src="https://cdn.worldvectorlogo.com/logos/jira-1.svg" />
-                    <Card.Body>
-                        <Card.Title>Jira</Card.Title>
-                        <Card.Text>
-                        <textarea value={otherSrc} onChange={noteChange} type="text" name="name" placeholder="Jira link"/>
-                        </Card.Text>
-                        <Button variant="primary">Add</Button>
-                    </Card.Body>
-                    </Card>
-                    
-                    </Col>
-                    <Col>
-                    <Card style={{ width: '18rem' }}>
                     <Card.Img variant="top" weight="20px" height="200px" src="https://cdn.afterdawn.fi/v3/news/600x400/github-logo.jpg" />
                     <Card.Body>
                         <Card.Title>Github</Card.Title>
@@ -389,6 +402,19 @@ export default function Canvas() {
                         <input value={githubRepo} onChange={githubRepoChange} type = "text" name="name" placeholder="Github repo" />
                         </Card.Text>
                         <Button variant="primary" onClick={() => githubSubmit()}>Add</Button>
+                    </Card.Body>
+                    </Card>
+                    
+                    </Col>
+                    <Col>
+                    <Card style={{ width: '18rem' }}>
+                    <Card.Img variant="top" weight="20px" height="200px" src="https://cdn.dribbble.com/users/159716/screenshots/15897999/media/a94ecbced7e3bd548253b2739d817e45.png?compress=1&resize=1600x1200" />
+                    <Card.Body>
+                        <Card.Title>Web links</Card.Title>
+                        <Card.Text>
+                        <input value={webLink} onChange={webLinkChange} type="text" name="name" placeholder="Link"/>
+                        </Card.Text>
+                        <Button onClick={() => webLinkSubmit()} variant="primary">Add</Button>
                     </Card.Body>
                     </Card>
                     
@@ -449,8 +475,9 @@ export default function Canvas() {
             >
               {figmaEmbedFrame}
             </Html>
-                    
+            {webLinks.map(item => <WebEmbed image={item.image} data={item}/>)}
             {notionObjs ? (notionObjs.map((notionObj) => (NotionEmbed(notionObj.title, notionObj.summary, notionObj.latest, notionObj.url, tool === '', notionImage, linkFunction, deleteImage, deleteFunction)))) : (<></>)}
+            {githubEmbed ? githubEmbed : (<></>)}
             <Rect
             x={30}
             y={60}

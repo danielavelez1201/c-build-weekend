@@ -152,7 +152,7 @@ async function handler(req, res) {
 
   var doc = docResponse.data.results
   var textObject = genText(doc)
-  const text = textObject.text.slice(0, 3)
+  const text = textObject.text
 
   const openAIOptions = {
     method: 'POST',
@@ -161,7 +161,7 @@ async function handler(req, res) {
       'Content-Type': 'application/json',
       Authorization: process.env.OPENAI_API_KEY,
     },
-    data: {prompt: text + " tl;dr " , max_tokens: 30}
+    data: {prompt: text + " tl;dr " , max_tokens: 20}
   };
   
   var summaryResponse = await axios.request(openAIOptions)

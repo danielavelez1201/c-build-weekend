@@ -11,9 +11,6 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
-import ListGroup from 'react-bootstrap/ListGroup';
-import ListGroupItem from 'react-bootstrap/ListGroupItem';
-import Nav from 'react-bootstrap/Nav';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './canvas.module.css';
 import { Client } from '@notionhq/client';
@@ -23,14 +20,6 @@ import { isLineBreak } from 'typescript';
 const notion = new Client({
   auth: 'secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx'
 });
-
-const sampleFile =
-  'https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2';
-
-const getPage = async (pageId) => {
-  const response = await notion.pages.retrieve({ page_id: pageId });
-  return response;
-};
 
 <style jsx>{`
   .iframe {

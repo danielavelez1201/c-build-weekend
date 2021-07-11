@@ -1,6 +1,5 @@
 import Router from 'next/dist/next-server/lib/router/router';
 import { Text, Group, Rect, Image, Line } from 'react-konva';
-import { BROWSER } from 'ua-parser-js';
 const figmaSrc = "https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2"
 import useImage from 'use-image';
 

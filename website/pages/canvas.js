@@ -61,6 +61,7 @@ export default function Canvas() {
   const [tool, setTool] = useState('');
   const [lines, setLines] = useState([]);
   const isDrawing = useRef(false);
+  const textRef = useRef(null);
 
   const handleMouseDown = (e) => {
     if (!tool) {
@@ -143,9 +144,6 @@ export default function Canvas() {
   const stageRef = useRef();
 
   const addObject = () => {
-    if (tool) {
-      return;
-    }
     const currentRectObjs = rectObjs;
     for (let i = 0; i < 10; i++) {
       currentRectObjs.push(RectObj);
@@ -175,7 +173,6 @@ export default function Canvas() {
     if (tool) {
       return;
     }
-    console.log('drags');
     setRectObjs(
       rectObjs.map((object) => {
         return {
@@ -234,7 +231,8 @@ export default function Canvas() {
     const x = e.evt.x;
     const y = e.evt.y;
     const currentTextObjs = textObjs;
-    currentTextObjs.push(
+    console.log(e);
+    const text = (
       <Text
         text='New Text'
         x={x}
@@ -245,6 +243,8 @@ export default function Canvas() {
         onDragEnd={handleDragEnd}
       />
     );
+
+    currentTextObjs.push(text);
     setTextObjs(currentTextObjs);
     setObjNum(objNum + 1);
   };

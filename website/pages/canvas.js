@@ -1,57 +1,51 @@
 import { createContext, useEffect, useState, useRef } from 'react';
-import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
-import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj } from '../components/shapes';
-import { FigmaEmbed, NotionEmbed } from '../components/embeds'
+import { Stage, Layer, Rect, Text, Circle, Line, Star, Group } from 'react-konva';
+import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj, CircleTextObj, StarObj, CorgiObj } from '../components/shapes';
+import { FigmaEmbed, NotionEmbed, GithubEmbed } from '../components/embeds'
+import { useRouter } from 'next/router'
+import useImage from 'use-image';
+
 import { Html } from 'react-konva-utils';
-import Button from 'react-bootstrap/Button'
-import Container from 'react-bootstrap/Container'
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
-import Card from 'react-bootstrap/Card'
-import ListGroup from 'react-bootstrap/ListGroup'
-import ListGroupItem from 'react-bootstrap/ListGroupItem'
-import Nav from 'react-bootstrap/Nav'
+import Button from 'react-bootstrap/Button';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Card from 'react-bootstrap/Card';
+import ListGroup from 'react-bootstrap/ListGroup';
+import ListGroupItem from 'react-bootstrap/ListGroupItem';
+import Nav from 'react-bootstrap/Nav';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './canvas.module.css';
-import { Client } from "@notionhq/client";
-import axios from "axios";
-
+import { Client } from '@notionhq/client';
+import axios from 'axios';
+import { isLineBreak } from 'typescript';
 
 const notion = new Client({
-    auth: "secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx"
+  auth: 'secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx'
+});
 
-})
-
-const sampleFile = "https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2"
-
-
+const sampleFile =
+  'https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FUKQDEpSXcCgPOUZAMemt7L%2FSample-File%3Fnode-id%3D0%253A2';
 
 const getPage = async (pageId) => {
-    const response = await notion.pages.retrieve({ page_id: pageId });
-    return response;
+  const response = await notion.pages.retrieve({ page_id: pageId });
+  return response;
 };
 
-
-
 <style jsx>{`
-    .iframe {
-        border: 1px solid rgba(0, 0, 0, 0.1)
-    }
-    `
-}</style>
-
-
-
-
-
-
+  .iframe {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+`}</style>;
 
 export default function Canvas() {
     const [windowVar, setWindowVar] = useState({innerWidth: 0, innerHeight: 0})
-    const [rectObjs, setRectObjs] = useState([RectObj, RectObj, RectObj]);
-    const [textObjs, setTextObjs] = useState([TitleTextObj]);
-    const [circleObjs, setCircleObjs] = useState([CircleObj]);
+    const [stars, setStars] = useState([StarObj]);
+    const [corgis, setCorgis] = useState([CorgiObj, CorgiObj, CorgiObj, CorgiObj, CorgiObj, CorgiObj, CorgiObj, CorgiObj, CorgiObj]);
     const [lineObjs, setLineObjs] = useState([LineObj]);
+    const [textObjs, setTextObjs] = useState([]);
+    const [squareObjs, setSquareObjs] = useState([]);
+    const [circleObjs, setCircleObjs] = useState([]);
     const [objNum, setObjNum] = useState(0);
     const [headerOpen, setHeaderOpen] = useState(true);
     const [data, setData] = useState(null);
@@ -64,15 +58,20 @@ export default function Canvas() {
     const [otherSrc, setOtherSrc] = useState("");
     const [other2Src, setOtherSrc2] = useState("");
 
-    const options = {
-        method: 'GET',
-        url: 'https://api.notion.com/v1/pages/cd69e214e8184f3092422d192bd9e5ec',
-        headers: {
-          'Notion-Version': '2021-05-13',
-          Authorization: 'Bearer secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx'
-        }
-      };
+    const [tool, setTool] = useState('');
+    const [lines, setLines] = useState([]);
+    const isDrawing = useRef(false);
+    const textRef = useRef(null);
+    const [notionImage] = useImage("https://i.pinimg.com/originals/99/7b/0a/997b0a243df40b681d8c8177724f1b45.png")
+    const [deleteImage] = useImage("https://static-00.iconduck.com/assets.00/x-close-delete-icon-512x512-hvworgpt.png")
+    const [iconSizeT, setIconSizeT] = useState("30px");
+    const [iconSizeSquare, setIconSizeSquare] = useState("30px");
+    const [iconSizeCircle, setIconSizeCircle] = useState("30px");
+    const [githubUsername, setGithubUsername] = useState("");
+    const [githubRepo, setGithubRepo] = useState("");
+    const [githubEmbed, setGithubEmbed] = useState(null);
 
+    const router = useRouter()
 
     const parseNotionId = (url) => {
         const idString = url.split('-').pop();
@@ -85,6 +84,31 @@ export default function Canvas() {
         return finalIdString
     }
 
+    const parseNotionTitle = (url) => {
+        var longString = url.split('/').pop()
+        var title = ""
+        var continuing = true
+        var i = 0
+        var numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+        while (continuing && i < longString.length) {
+            if (!longString.slice(i).includes('-')) {
+                continuing = false
+            }
+            else if (numbers.includes(longString[i])) {
+                continuing = false
+            }
+            else if (longString[i] === '-') {
+                title += " "
+            }
+            else {
+                title += longString[i]
+            }
+            i++
+        }
+        return title;
+    }
+
+
     async function notionSubmit(url) {
         const id = parseNotionId(url)
         await axios.get('/api/notion_api', { params: { src: id }})
@@ -93,7 +117,8 @@ export default function Canvas() {
                 console.log("response", result)
                 //setNotionObjs({summary: result.summary[0].text, latest: result.latest})
                 const currentNotionObjs = notionObjs
-                currentNotionObjs.push({summary: result.summary[0].text, latest: result.latest})
+                //const title = result.title.properties.title.title[0].plain_text
+                currentNotionObjs.push({title: parseNotionTitle(url), summary: result.summary[0].text, latest: result.latest, url: url})
                 setNotionObjs(currentNotionObjs)
                 console.log(notionObjs)
                 setObjNum(objNum + 1)
@@ -101,54 +126,124 @@ export default function Canvas() {
         
     }
 
-    async function openAI(text) {
-        await axios.get('/api/openai_api', { params: { text: text}})
+    async function githubSubmit() {
+        console.log("async func")
+        await axios.get('/api/github_api', {params: {username: githubUsername, repo: githubRepo}})
             .then(function(response) {
-                console.log(response)
+                console.log("response", response.commits)
+                setGithubEmbed(GithubEmbed(response.commits, notionImage, linkFunction, deleteImage, deleteFunction))
             })
-    }
+    } 
+  
 
-    const noteChange = (e) => {
-        setNoteText(e.target.value)
+  const handleMouseDown = (e) => {
+    if (!tool) {
+      return;
     }
+    isDrawing.current = true;
+    const pos = e.target.getStage().getPointerPosition();
+    setLines([...lines, { tool, points: [pos.x, pos.y] }]);
+  };
 
-    const notionSrcChange = (e) => {
-        setNotionSrc(e.target.value)
+  const handleMouseMove = (e) => {
+    // no drawing - skipping
+    if (!isDrawing.current) {
+      return;
     }
+    const stage = e.target.getStage();
+    const point = stage.getPointerPosition();
+    let lastLine = lines[lines.length - 1];
+    // add point
+    lastLine.points = lastLine.points.concat([point.x, point.y]);
 
+    // replace last
+    lines.splice(lines.length - 1, 1, lastLine);
+    setLines(lines.concat());
+  };
 
-    const figmaSrcChange = (e) => {
-        setFigmaSrc(e.target.value)
-    }
+  const handleMouseUp = () => {
+    isDrawing.current = false;
+  };
 
-    const noteSubmit = () => {
-        console.log("note submit")
-        const currentTextObjs = textObjs
-        currentTextObjs.push(NoteTextObj(noteText))
-        setTextObjs(currentTextObjs)
-        setNoteText("")
-    }
+  async function getNotionData(url) {
+    const id = parseNotionId(url);
+    await axios
+      .get('/api/notion_api', { params: { src: id } })
+      .then(function (response) {
+        console.log(response.data.properties);
+        console.log(response.data.properties.title.title.plain_text);
+        setNotionObjs(response.data.properties);
+      });
+  }
 
-    const figmaSubmit = () => {
-        console.log("figma submit")
-        setFigmaEmbedFrame(FigmaEmbed(figmaSrc))
-    }
+  const noteChange = (e) => {
+    setNoteText(e.target.value);
+  };
+
+  const githubUsernameChange = (e) => {
+      setGithubUsername(e.target.value);
+  }
+
+  const githubRepoChange = (e) => {
+    setGithubRepo(e.target.value);
+}
+
+  const notionSrcChange = (e) => {
+    setNotionSrc(e.target.value);
+  };
+
+  const figmaSrcChange = (e) => {
+    console.log(encodeURIComponent(e.target.value))
+    setFigmaSrc(encodeURIComponent(e.target.value));
+  };
+
+  const noteSubmit = () => {
+    console.log('note submit');
+    const currentTextObjs = textObjs;
+    currentTextObjs.push(TextObj(noteText));
+    setTextObjs(currentTextObjs);
+    setNoteText('');
+  };
+
+  const squareSubmit = () => {
+    console.log('note submit');
+    const currentTextObjs = textObjs;
+    currentTextObjs.push(NoteTextObj(noteText));
+    setTextObjs(currentTextObjs);
+    setNoteText('');
+  };
+
+  const circleSubmit = () => {
+    console.log('note submit');
+    const currentTextObjs = textObjs;
+    currentTextObjs.push(CircleTextObj(noteText));
+    setTextObjs(currentTextObjs);
+    setNoteText('');
+  };
+  
+
+  const figmaSubmit = () => {
+    console.log('figma submit');
+    setFigmaEmbedFrame(FigmaEmbed(figmaSrc));
+  };
+
 
     const stageRef = useRef();
 
 
     const addObject = () => {
-        const currentRectObjs = rectObjs;
+        
+        const currentStars = stars;
         for (let i =0; i<10; i++) {
-            currentRectObjs.push(RectObj)
+            currentStars.push(StarObj)
         }
-        setRectObjs(currentRectObjs)
+        setStars(currentStars)
 
-        const currentCircleObjs = circleObjs;
+        const currentCorgis = corgis;
         for (let i =0; i<10; i++) {
-            currentCircleObjs.push(CircleObj)
+            currentCorgis.push(CorgiObj)
         }
-        setCircleObjs(currentCircleObjs)
+        setCorgis(currentCorgis)
         setObjNum(objNum + 1)
     }
 
@@ -160,30 +255,18 @@ export default function Canvas() {
         });
         
         // openAI()
-    }, [rectObjs, circleObjs, textObjs, objNum, notionObjs])
+    }, [objNum, notionObjs, stars, corgis, textObjs])
 
-    
+    const deleteNotion = (i) => {
+        const newNotionObjs = [...notionObjs]
+        notionObjs.splice(i, 1)
+        setNotionObjs(newNotionObjs)
+    }
 
     const handleDragStart = (e) => {
         const id = e.target.id();
-        setRectObjs(
-            rectObjs.map((object) => {
-                return {
-                    ...object,
-                    isDragging: object.id === id
-                }
-            })
-        )
-        setCircleObjs(
-            circleObjs.map((object) => {
-                return {
-                    ...object,
-                    isDragging: object.id === id
-                }
-            })
-        )
-        setTextObjs(
-            textObjs.map((object) => {
+        setStars(
+            stars.map((object) => {
                 return {
                     ...object,
                     isDragging: object.id === id
@@ -194,24 +277,8 @@ export default function Canvas() {
     }
     const handleDragEnd = (e) => {
         const id = e.target.id();
-        setRectObjs(
-            rectObjs.map((object) => {
-                return {
-                    ...object,
-                    isDragging: false,
-                }
-            })
-        )
-        setCircleObjs(
-            circleObjs.map((object) => {
-                return {
-                    ...object,
-                    isDragging: false
-                }
-            })
-        )
-        setTextObjs(
-            textObjs.map((object) => {
+        setStars(
+            stars.map((object) => {
                 return {
                     ...object,
                     isDragging: false
@@ -220,27 +287,32 @@ export default function Canvas() {
         )
     }
 
-    const createText = (e) => {
-        const x = e.evt.x
-        const y = e.evt.y
-        const currentTextObjs = textObjs
-        currentTextObjs.push(<Text
-            text="New Text"
-            x= {x}
-            y= {y}
-            draggable
-            fill={'black'}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-        />)
-        setTextObjs(currentTextObjs)
-        setObjNum(objNum + 1)
-    }
+  const addComment = (text) => {
+    console.log(text);
+  };
 
-    const addComment = (text) => {
-        console.log(text)
-    }
+  const linkFunction = (url) => {
+      window.open(url, '_ blank')
+  }
 
+  const deleteFunction = (e) => {
+      var newNotionObjs = notionObjs
+      console.log(e, notionObjs)
+      for (var i = 0; i < notionObjs.length; i ++) {
+        if (notionObjs[i].id === e.target.id) {
+            newNotionObjs.splice(i, 1)
+        }
+      }
+      setNotionObjs([])
+  }
+
+  const adjustToolType = () => {
+    if (!tool) {
+      setTool('pen');
+    } else {
+      setTool('');
+    }
+}
 
     console.log(notionObjs)
 
@@ -258,7 +330,9 @@ export default function Canvas() {
                             <Card.Text>
                             <textarea value={noteText} onChange={noteChange} type="text" name="name" placeholder="Add note"/>
                             </Card.Text>
-                            <Button variant="primary" onClick={noteSubmit}>Add</Button>
+                            <img height={iconSizeT} src="https://img.icons8.com/ios/500/text.png" onMouseOut={() => setIconSizeT("30px")} onMouseOver={() => setIconSizeT("35px")} onClick={noteSubmit} />
+                            <img height={iconSizeSquare} onMouseOut={() => setIconSizeSquare("30px")} onMouseOver={() => setIconSizeSquare("35px")} onClick={squareSubmit} src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAb1BMVEX///8AAAAwMDCWlpb09PSysrJDQ0OGhobm5uagoKBoaGiurq7x8fH6+vrDw8OhoaE3Nzff399bW1va2tpgYGDQ0NAzMzO9vb1BQUEiIiJJSUlQUFB7e3uHh4cnJydvb28ZGRmRkZETExN0dHTJycmpTN17AAAEZ0lEQVR4nO2d6ZaiMBBGFZQdBZd213b0/Z9xYDzNYrekTAoqPee7f+WEXBOqCvBYoxEAAAAAAAAAAAAAAAAAAMBvJJ2FkZc5cmReFM7SvvQmcTa2gyye9OAX+NJeLfyAW9CVVvrGldUvd6R9fsBZ8glOpWVeMOUSDKVNXhL+74JMirZu0QcMGzV/GtKLTq4cfuQ9zSc3NmxFUWfOnobeJpi3Cg/HdLxWHow5ZshA3JyUazZW0Bhqn/DMj4Fk35iX2bZqlGqr3gpeHVb1xHyTcSaNFbRKcJQ2VtGkDG9seHu26IOEJzxkLKP0Q/3tZ/qDpHwxuQfqPKZ/Ac2qMeaMM+OiriZnDGPIJ/rv1JlMvzqNvobwGCfGR1XARZJD9AnDAlSh1Cip9kZVjugH0ypaGdZ+PVHVzPqRHobCwJAADIWBIQEYCgNDAjAUBoYEYCgMDAnAUBgYEoChMDAkAENhYEgAhsLAkAAMhYEhARgKA0MCMBQGhgRgKAwMCcBQGBgSgKEwMCQAQ2FgSACGwsCQAAyFgSEBGAoDQwIwFAaGBGAoDAwJwFAYGBKAoTAwJABDYWBIAIbCwJAADIWBIQEYCgNDAjAUBoYEYCgMDAnAUBgYEoChMDAkAENhYEgAhhVpH/2XlAxnmBzPY89fD245mGH++Thot5gO+7ffgxk2+6KcXcYmTCqGMlyOn7htBuqjMJThT72EDoMspaRhuV9v+v/nT0TY8N9S9ttayALDgsxf93ZV2mFY8Lmamred+glrDEs+3LX2LF5ilWHJbcq8X4c3XG4uu27JBWsWGd6wKEzT5fWjW9I5svWCFTEsSaaLbsnxIWbJImKGBendV3TWdU5346tS0rAknyuW8k9kmEWkDQsms2O3pFkWscCwZBluFZYX3SxiiWFBoMwixb2IRoC1x7Bgsr6qQs/t/u5jEKsMS5LpatzN/r0sYp1hiTKL7E70J1pWGo7KLKJYyiKL0JbSVsOCyUaVRbaULMJgSOq7VvWS/HwrUhCyyEYRXxn6rpF659Xf5LsBP9hE527JQ5h3DMrQO480xOHroIXGGYossn/WapMdZ68KAobmhaQeltUxN82zJLHevQhHD0tKH9IN4Rg192Or//d3dtf1836dVx/qP7ek9JKtNunY8PZdfS9yaS8lRy9ZQj/gepkZGuomyiyyr7NI3Q94a3BKZU/ntA6GJ4PzNFBnkdumTEtMPZ2Vfbkb5QnfM9FEmUX2Yc7Ul1vVW72xqXRyxWsm65Mii9SYtYENGiPtnzdq2iww+V82Bcos8sDwqZbbHKu94TfNj3SToYK7r9ivDL+iaOUpJ/z6woK4FRDO/b3ED+Ko6wmBeQjPn0b0It89XZ4vkkXo9kYYHjvCK0OAI7+XEGFqLtisjuxDvyL9JYpMgvZuVJYt+iBXVP4iOLxvlkP1GQeG/deEga8+6YD4ffzKYxIrnnUOxjburcBIZ2HkZY4cmReFbO+QAQAAAAAAAAAAAAAAAAAAhuUvNus7niK479EAAAAASUVORK5CYII=" />
+                            <img height={iconSizeCircle} src="https://previews.123rf.com/images/martialred/martialred1803/martialred180300017/97216890-blank-round-sticker-with-corner-peel-line-art-vector-icon-for-apps-and-websites.jpg" onMouseOut={() => setIconSizeCircle("30px")} onMouseOver={() => setIconSizeCircle("35px")} onClick={circleSubmit} />
                         </Card.Body>
                         </Card>
                     </Col>
@@ -268,7 +342,7 @@ export default function Canvas() {
                     <Card.Body>
                         <Card.Title>Notion doc</Card.Title>
                         <Card.Text>
-                        <textarea value={notionSrc} onChange={notionSrcChange} type="text" name="name" placeholder="Doc link"/>
+                        <textarea value={notionSrc} onChange={notionSrcChange} type="text" name="name" placeholder="Page url"/>
                         </Card.Text>
                         <Button variant="primary" onClick={() => notionSubmit(notionSrc)}>Add</Button>
                     </Card.Body>
@@ -282,7 +356,7 @@ export default function Canvas() {
                         <div>
                             <Card.Title>Figma</Card.Title>
                             <Card.Text>
-                                <textarea value={figmaSrc} onChange={figmaSrcChange} type="text" name="name" placeholder="Figma link"/>
+                                <textarea value={figmaSrc} onChange={figmaSrcChange} type="text" name="name" placeholder="Figma url"/>
                             </Card.Text>
                         <Button onClick={figmaSubmit} variant="primary">Add</Button>
                         </div>
@@ -306,13 +380,15 @@ export default function Canvas() {
                     </Col>
                     <Col>
                     <Card style={{ width: '18rem' }}>
-                    <Card.Img variant="top" weight="20px" height="200px" src="https://i.pcmag.com/imagery/reviews/03ErPVuqnBDCwlLsh8EzpBM-5..1569477508.jpg" />
+                    <Card.Img variant="top" weight="20px" height="200px" src="https://cdn.afterdawn.fi/v3/news/600x400/github-logo.jpg" />
                     <Card.Body>
-                        <Card.Title>Google resource</Card.Title>
+                        <Card.Title>Github</Card.Title>
                         <Card.Text>
-                        <textarea value={other2Src} onChange={noteChange} type="text" name="name" placeholder="Link"/>
+                        <input value={githubUsername} onChange={githubUsernameChange} type="text" name="name" placeholder="Github username"/>
+                        <br></br>
+                        <input value={githubRepo} onChange={githubRepoChange} type = "text" name="name" placeholder="Github repo" />
                         </Card.Text>
-                        <Button variant="primary">Add</Button>
+                        <Button variant="primary" onClick={() => githubSubmit()}>Add</Button>
                     </Card.Body>
                     </Card>
                     
@@ -322,90 +398,141 @@ export default function Canvas() {
         </div>}
         <div>
         <br></br>
-        <button onClick={() => setHeaderOpen(!headerOpen)}><img height="30px" src="https://static.thenounproject.com/png/551749-200.png"></img></button>
-        <Stage ref={stageRef} width={windowVar.innerWidth} height={windowVar.innerHeight} style={{border: '1px solid grey'}}>
-        <Layer>
-            <Html divProps={{
-              style: {
-                position: 'absolute',
-                'margin-top': '100px',
-                'margin-left': '1200px',
-                'box-shadow': '0 4px 8px 0 rgba(0,0,0,0.2)',
-                'border-radius': '5px',
-                'padding': '5px',
-              },
-            }}>
-                {figmaEmbedFrame}
+        <button onClick={() => setHeaderOpen(!headerOpen)}>
+          <img
+            height='30px'
+            src='https://static.thenounproject.com/png/551749-200.png'
+          ></img>
+        </button>
+        <span>
+          <button
+            onClick={() => adjustToolType()}
+            style={{
+              backgroundColor: tool ? 'gray' : ''
+            }}
+          >
+            <img src='/paintbrush.svg' width='30px' />
+          </button>
+          {tool && (
+            <select
+              value={tool}
+              onChange={(e) => {
+                setTool(e.target.value);
+              }}
+            >
+              <option value='pen'>Pen</option>
+              <option value='eraser'>Eraser</option>
+            </select>
+          )}
+        </span>
+        <Stage
+          ref={stageRef}
+          width={windowVar.innerWidth}
+          height={windowVar.innerHeight}
+          style={{ border: '1px solid grey' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+        >
+          <Layer>
+            <Html
+              divProps={{
+                style: {
+                  position: 'absolute',
+                  'margin-top': '100px',
+                  'margin-left': '1200px',
+                  'box-shadow': '0 4px 8px 0 rgba(0,0,0,0.2)',
+                  'border-radius': '5px',
+                  padding: '5px'
+                }
+              }}
+            >
+              {figmaEmbedFrame}
             </Html>
-
-            {/* {notionObjs !== [] ? (notionObjs.map((notionObj) => (NotionEmbed(notionObj.summary, notionObj.latest)))) : (<></>)} */}
-            {NotionEmbed("header", "summary!", [{text: "item 1"}, {text: "item 2"}, {text: "item 3"}])}
+                    
+            {notionObjs ? (notionObjs.map((notionObj) => (NotionEmbed(notionObj.title, notionObj.summary, notionObj.latest, notionObj.url, tool === '', notionImage, linkFunction, deleteImage, deleteFunction)))) : (<></>)}
             <Rect
-                x={50}
-                y={100}
-                width={200}
-                height={200}
-                fill="#B3DFB5"
-                shadowBlur={10}
-                onMouseDown={() => addObject()}
+            x={30}
+            y={60}
+            width={90}
+            height={300}
+            stroke="gray"
+            cornerRadius={10}
             />
-            <Circle 
-            x={150} 
-            y={450} 
-            radius={100} 
-            fill="#E0BBE4" 
-            shadowBlur={10}
+            
+            <Star
+            x={70}
+            y={120}
+            numPoints={5}
+            innerRadius={20}
+            outerRadius={40}
+            fill="#89b717"
+            opacity={0.8}
+            shadowColor="black"
+            shadowOpacity={0.6}
+            shadowOffsetX={5}
+            shadowOffsetY={5}
+            draggable={!tool}
+            isDragging={false}
             onMouseDown={() => addObject()}
             />
-            {textObjs.map((text) => (
-                <Text
-                text={text.props.text}
-                x={text.props.x}
-                y={text.props.y}
-                fontSize={text.props.fontSize}
-                fontFamily={text.props.fontFamily}
-                draggable
-                fill={'dark-grey'}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onMouseDown={() => addObject()}
+            <CorgiObj
+            draggable={!tool}
+            onMouseDown={() => addObject()}
             />
-            ))}
-            {rectObjs.map((rect) => (
-                <Rect
-                key={rect.props.id}
-                id={rect.props.id}
-                x={rect.props.x}
-                y={rect.props.y}
-                width={rect.props.width}
-                height={rect.props.height}
-                fill={rect.props.fill}
-                shadowBlur={rect.props.shadowBlur}
-                draggable
+            {corgis.map((corgi) => (
+            <CorgiObj
+                key={corgi.id}
+                id={corgi.id}
+                x={30}
+                y={200}
+                draggable={!tool}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             />
-            ))}
-            {circleObjs.map((circle) => (
-                <Circle 
-                key={circle.props.id}
-                id={circle.props.id}
-                x={circle.props.x} 
-                y={circle.props.y} 
-                radius={circle.props.radius} 
-                fill={circle.props.fill}
-                draggable
+         ))}
+            {stars.map((star) => (
+            <Star
+                key={star.id}
+                id={star.id}
+                x={70}
+                y={120}
+                numPoints={5}
+                innerRadius={20}
+                outerRadius={40}
+                fill="#89b717"
+                opacity={0.8}
+                draggable={!tool}
+                shadowOffsetX={5}
+                shadowOpacity={0.6}
+                shadowOffsetY={5}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
-                onClick={() => addObject}
-                />
-            ))}            
-          
-        </Layer>
-      </Stage>  
-        </div>
-        
-        </div>
-                  
-    );
+            />
+         ))}
+            {textObjs.map((text) => {
+                return {
+                    ...text,
+                    draggable: !tool
+                }
+            })}
+            {lines.map((line, i) => (
+              <Line
+                key={i}
+                points={line.points}
+                stroke='gray'
+                strokeWidth={!line.tool === 'eraser' ? 20 : 3}
+                tension={0.5}
+                lineCap='round'
+                draggable={!tool}
+                globalCompositeOperation={
+                  line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                }
+              />
+            ))}
+          </Layer>
+        </Stage>
+      </div>
+    </div>
+  );
 }

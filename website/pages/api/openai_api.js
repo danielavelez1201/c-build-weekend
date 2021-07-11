@@ -25,8 +25,7 @@ async function handler(req, res) {
   // Run the middleware
   await runMiddleware(req, res, cors)
 
-  const text = req.query.text.slice(0, 5)
-  console.log(text)
+  const text = req.query.text
 
   const apiKey = process.env.OPENAI_API_KEY
   const options = {
@@ -36,7 +35,7 @@ async function handler(req, res) {
       'Content-Type': 'application/json',
       Authorization: apiKey,
     },
-    data: {prompt: text + ' tl;dr:', max_tokens: 1}
+    data: {prompt: text + ' tl;dr:', max_tokens: 10}
   };
   
   axios.request(options).then(function (response) {

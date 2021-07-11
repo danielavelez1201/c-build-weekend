@@ -1,7 +1,7 @@
 import { createContext, useEffect, useState, useRef } from 'react';
 import { Stage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 import { RectObj, LineObj, CircleObj, TextObj, TitleTextObj, NoteTextObj } from '../components/shapes';
-import { FigmaEmbed } from '../components/embeds'
+import { FigmaEmbed, NotionEmbed } from '../components/embeds'
 import { Html } from 'react-konva-utils';
 import Button from 'react-bootstrap/Button'
 import Container from 'react-bootstrap/Container'
@@ -56,7 +56,7 @@ export default function Canvas() {
     const [headerOpen, setHeaderOpen] = useState(true);
     const [data, setData] = useState(null);
     const [figmaEmbedFrame, setFigmaEmbedFrame] = useState(null);
-    const [notionObjs, setNotionObjs] = useState(null);
+    const [notionObjs, setNotionObjs] = useState([]);
 
     const [noteText, setNoteText] = useState("");
     const [notionSrc, setNotionSrc] = useState("");
@@ -75,19 +75,30 @@ export default function Canvas() {
 
 
     const parseNotionId = (url) => {
-        return url.split('-').pop()
+        const idString = url.split('-').pop();
+        const piece1 = idString.slice(0, 8)
+        const piece2 = idString.slice(8, 12)
+        const piece3 = idString.slice(12, 16)
+        const piece4 = idString.slice(16, 20)
+        const piece5 = idString.slice(20, 32)
+        const finalIdString = piece1 + "-" + piece2 + "-" + piece3 + "-" + piece4 + "-" + piece5
+        return finalIdString
     }
 
-    
-    
-
-    async function getNotionData(url) {
+    async function notionSubmit(url) {
         const id = parseNotionId(url)
         await axios.get('/api/notion_api', { params: { src: id }})
             .then(function(response) {
-                console.log(response)
-                setNotionObjs(response.data)
+                const result = response.data
+                console.log("response", result)
+                //setNotionObjs({summary: result.summary[0].text, latest: result.latest})
+                const currentNotionObjs = notionObjs
+                currentNotionObjs.push({summary: result.summary[0].text, latest: result.latest})
+                setNotionObjs(currentNotionObjs)
+                console.log(notionObjs)
+                setObjNum(objNum + 1)
             })
+        
     }
 
     async function openAI(text) {
@@ -147,13 +158,9 @@ export default function Canvas() {
             innerWidth: window.innerWidth,
             innerHeight: window.innerHeight
         });
-
-        
-        getNotionData("https://www.notion.so/Facebook-b0fc39fdec604265bd64db7adca76bbe")
-
         
         // openAI()
-    }, [rectObjs, circleObjs, textObjs, objNum])
+    }, [rectObjs, circleObjs, textObjs, objNum, notionObjs])
 
     
 
@@ -263,7 +270,7 @@ export default function Canvas() {
                         <Card.Text>
                         <textarea value={notionSrc} onChange={notionSrcChange} type="text" name="name" placeholder="Doc link"/>
                         </Card.Text>
-                        <Button variant="primary" onClick={() => getNotionData(notionSrc)}>Add</Button>
+                        <Button variant="primary" onClick={() => notionSubmit(notionSrc)}>Add</Button>
                     </Card.Body>
                     </Card>
                     
@@ -313,7 +320,6 @@ export default function Canvas() {
                 </Row>
             </Container>
         </div>}
-        {notionObjs && <div>{notionObjs.summary}</div>}        
         <div>
         <br></br>
         <button onClick={() => setHeaderOpen(!headerOpen)}><img height="30px" src="https://static.thenounproject.com/png/551749-200.png"></img></button>
@@ -332,6 +338,8 @@ export default function Canvas() {
                 {figmaEmbedFrame}
             </Html>
 
+            {/* {notionObjs !== [] ? (notionObjs.map((notionObj) => (NotionEmbed(notionObj.summary, notionObj.latest)))) : (<></>)} */}
+            {NotionEmbed("header", "summary!", [{text: "item 1"}, {text: "item 2"}, {text: "item 3"}])}
             <Rect
                 x={50}
                 y={100}

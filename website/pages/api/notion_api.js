@@ -8,6 +8,8 @@ const cors = Cors({
   methods: ['GET', 'HEAD'],
 })
 
+
+
 // Helper method to wait for a middleware to execute before continuing
 // And to throw an error when an error happens in a middleware
 function runMiddleware(req, res, fn) {
@@ -27,6 +29,7 @@ async function handler(req, res) {
   await runMiddleware(req, res, cors)
 
   const url = 'https://api.notion.com/v1/pages/' + req.query.src
+  console.log(req.query.src)
 
   const options1 = {
     method: 'GET',
@@ -36,11 +39,10 @@ async function handler(req, res) {
       Authorization: 'Bearer secret_wgPV8akvo0FRjsUofyfFZ4dYfRYocDLVmGEUsNd8qSx'
     }
   };
-
   
   const options = {
     method: 'GET',
-    url: 'https://api.notion.com/v1/blocks/90760907-b2df-4aa8-b236-42f139b542e7/children',
+    url: 'https://api.notion.com/v1/blocks/' + req.query.src + '/children',
     params: {page_size: '100'},
     headers: {
       'Notion-Version': '2021-05-13',
@@ -49,7 +51,7 @@ async function handler(req, res) {
   };
 
 
-  axios.request(options).then(function (response) {
+  const textObject = await axios.request(options).then(function (response) {
     var doc = response.data.results
     var text = ""
     var latest = []
@@ -119,11 +121,29 @@ async function handler(req, res) {
         }  
       }
     }
-
-    res.status(200).json({summary: text, latest: new_latest})
+    return {text: text, latest: new_latest}
 }).catch(function (error) {
     console.error(error);
 });
+const text = textObject.text
+
+const openAIOptions = {
+  method: 'POST',
+  url: 'https://api.openai.com/v1/engines/davinci/completions',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: process.env.OPENAI_API_KEY,
+  },
+  data: {prompt: text + ' tl;dr: ', max_tokens: 5}
+};
+
+
+  await axios.request(openAIOptions)
+    .then(function(response) {
+      console.log(response.data.choices)
+      res.status(200).json({summary: response.data.choices, latest: textObject.latest})
+    })
+
   
 }
 

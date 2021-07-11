@@ -78,13 +78,22 @@ export default function Canvas() {
         return url.split('-').pop()
     }
 
+    
+    
+
     async function getNotionData(url) {
         const id = parseNotionId(url)
         await axios.get('/api/notion_api', { params: { src: id }})
             .then(function(response) {
-                console.log(response.data.properties)
-                console.log(response.data.properties.title.title.plain_text)
-                setNotionObjs(response.data.properties)
+                console.log(response)
+                setNotionObjs(response.data)
+            })
+    }
+
+    async function openAI(text) {
+        await axios.get('/api/openai_api', { params: { text: text}})
+            .then(function(response) {
+                console.log(response)
             })
     }
 
@@ -138,9 +147,13 @@ export default function Canvas() {
             innerWidth: window.innerWidth,
             innerHeight: window.innerHeight
         });
-        if (notionObjs !== null) {
-            console.log("notionObj var", notionObjs.title.title[0].plain_text)}
-    }, [rectObjs, circleObjs, textObjs, objNum, notionObjs])
+
+        
+        getNotionData("https://www.notion.so/Facebook-b0fc39fdec604265bd64db7adca76bbe")
+
+        
+        // openAI()
+    }, [rectObjs, circleObjs, textObjs, objNum])
 
     
 
@@ -300,7 +313,7 @@ export default function Canvas() {
                 </Row>
             </Container>
         </div>}
-        {notionObjs && <div>{notionObjs.title.title[0].plain_text}</div>}        
+        {notionObjs && <div>{notionObjs.summary}</div>}        
         <div>
         <br></br>
         <button onClick={() => setHeaderOpen(!headerOpen)}><img height="30px" src="https://static.thenounproject.com/png/551749-200.png"></img></button>

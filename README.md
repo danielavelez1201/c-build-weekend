@@ -9,7 +9,7 @@ Imagine Notion meets whiteboarding. You can pin and move around relevant resourc
 
 
 Prod link: 
-https://c-build-weekend-nhl6jfaur-danielavelez1201.vercel.app/
+www.c-build-weekend.vercel.app
 *note: Notion GPT-3 modal functionality not on prod
 
 To run on local:
